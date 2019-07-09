@@ -192,8 +192,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return unexported;
     }
 
+    /**
+     * 前置工作主要包含两个部分，分别是配置检查，以及 URL 装配。
+     * 在导出服务之前，Dubbo 需要检查用户的配置是否合理，或者为用户补充缺省配置。
+     * 配置检查完成后，接下来需要根据这些配置组装 URL。在 Dubbo 中，URL 的作用十分重要。
+     * Dubbo 使用 URL 作为配置载体，所有的拓展点都是通过 URL 获取配置。这一点，官方文档中有所说明。
+     * 采用 URL 作为配置信息的统一格式，所有扩展点都通过传递 URL 携带配置信息。
+     */
     public synchronized void export() {
         if (provider != null) {
+        	// 获取 export 和 delay 配置
             if (export == null) {
                 export = provider.getExport();
             }
@@ -201,10 +209,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 delay = provider.getDelay();
             }
         }
+        // 如果 export 为 false，则不导出服务
         if (export != null && !export) {
             return;
         }
-
+        // delay > 0，延时导出服务
         if (delay != null && delay > 0) {
             delayExportExecutor.schedule(new Runnable() {
                 @Override
@@ -212,9 +221,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                     doExport();
                 }
             }, delay, TimeUnit.MILLISECONDS);
+        // 立即导出服务
         } else {
             doExport();
         }
+        /*
+         * 有时候我们只是想本地启动服务进行一些调试工作，我们并不希望把本地启动的服务暴露出去给别人调用。
+         * 此时，我们可通过配置 export 禁止服务导出，比如：<dubbo:provider export="false" />
+         */
     }
 
     protected synchronized void doExport() {
@@ -225,10 +239,15 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             return;
         }
         exported = true;
+        // 检测 interfaceName 是否合法
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:service interface=\"\" /> interface not allow null!");
         }
+        // 检测 provider 是否为空，为空则新建一个，并通过系统变量为其初始化
         checkDefault();
+        
+        // 下面几个 if 语句用于检测 provider、application 等核心配置类对象是否为空，
+        // 若为空，则尝试从其他配置类对象中获取相应的实例。
         if (provider != null) {
             if (application == null) {
                 application = provider.getApplication();
@@ -262,11 +281,15 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 monitor = application.getMonitor();
             }
         }
+        // 检测 ref 是否为泛化服务类型
         if (ref instanceof GenericService) {
+        	// 设置 interfaceClass 为 GenericService.class
             interfaceClass = GenericService.class;
             if (StringUtils.isEmpty(generic)) {
+            	// 设置 generic = "true"
                 generic = Boolean.TRUE.toString();
             }
+        // ref 非 GenericService 类型
         } else {
             try {
                 interfaceClass = Class.forName(interfaceName, true, Thread.currentThread()
@@ -274,20 +297,26 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
+            // 对 interfaceClass，以及 <dubbo:method> 标签中的必要字段进行检查
             checkInterfaceAndMethods(interfaceClass, methods);
+            // 对 ref 合法性进行检测
             checkRef();
+            // 设置 generic = "false"
             generic = Boolean.FALSE.toString();
         }
+        // local 和 stub 在功能应该是一致的，用于配置本地存根
         if (local != null) {
             if ("true".equals(local)) {
                 local = interfaceName + "Local";
             }
             Class<?> localClass;
             try {
+            	// 获取本地存根类
                 localClass = ClassHelper.forNameWithThreadContextClassLoader(local);
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
+            // 检测本地存根类是否可赋值给接口类，若不可赋值则会抛出异常，提醒使用者本地存根类类型不合法
             if (!interfaceClass.isAssignableFrom(localClass)) {
                 throw new IllegalStateException("The local implementation class " + localClass.getName() + " not implement interface " + interfaceName);
             }
@@ -306,6 +335,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException("The stub implementation class " + stubClass.getName() + " not implement interface " + interfaceName);
             }
         }
+        // 检测各种对象是否为空，为空则新建，或者抛出异常
         checkApplication();
         checkRegistry();
         checkProtocol();
@@ -314,7 +344,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (path == null || path.length() == 0) {
             path = interfaceName;
         }
+        // 导出服务
         doExportUrls();
+        // ProviderModel 表示服务提供者模型，此对象中存储了与服务提供者相关的信息。
+        // 比如服务的配置信息，服务实例等。每个被导出的服务对应一个 ProviderModel。
+        // ApplicationModel 持有所有的 ProviderModel。
         ProviderModel providerModel = new ProviderModel(getUniqueServiceName(), this, ref);
         ApplicationModel.initProviderModel(getUniqueServiceName(), providerModel);
     }
