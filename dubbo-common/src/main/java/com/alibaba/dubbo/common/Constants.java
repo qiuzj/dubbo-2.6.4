@@ -58,9 +58,9 @@ public class Constants {
     public static final String CACHE_KEY = "cache";
 
     public static final String DYNAMIC_KEY = "dynamic";
-
+    /** dubbo属性文件路径 */
     public static final String DUBBO_PROPERTIES_KEY = "dubbo.properties.file";
-
+    /** 上面的路径找不到，则默认加载这个属性文件 */
     public static final String DEFAULT_DUBBO_PROPERTIES = "dubbo.properties";
 
     public static final String SENT_KEY = "sent";

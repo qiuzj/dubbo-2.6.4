@@ -89,10 +89,15 @@ public abstract class AbstractConfig implements Serializable {
         return value;
     }
 
+    /**
+     * 逻辑其实也简单，就是遍历config的所有public方法，然后根据方法名称构建系统属性key，再获取到属性值然后设置回config中。
+     * @param config
+     */
     protected static void appendProperties(AbstractConfig config) {
         if (config == null) {
             return;
         }
+        // dubbo."截取类名前缀小写，即删除后缀Config、Bean".
         String prefix = "dubbo." + getTagName(config.getClass()) + ".";
         Method[] methods = config.getClass().getMethods();
         for (Method method : methods) {
@@ -100,6 +105,7 @@ public abstract class AbstractConfig implements Serializable {
                 String name = method.getName();
                 if (name.length() > 3 && name.startsWith("set") && Modifier.isPublic(method.getModifiers())
                         && method.getParameterTypes().length == 1 && isPrimitive(method.getParameterTypes()[0])) {
+                	// 方法名转小写，以驼峰字母为间隔中间添加.分隔符
                     String property = StringUtils.camelToSplitName(name.substring(3, 4).toLowerCase() + name.substring(4), ".");
 
                     String value = null;
@@ -110,6 +116,7 @@ public abstract class AbstractConfig implements Serializable {
                             logger.info("Use System Property " + pn + " to config dubbo");
                         }
                     }
+                    // 看到这里，应该是循环每一个方法，根据属性名生成系统属性key，然后获取相应的值
                     if (value == null || value.length() == 0) {
                         String pn = prefix + property;
                         value = System.getProperty(pn);
@@ -160,6 +167,7 @@ public abstract class AbstractConfig implements Serializable {
         String tag = cls.getSimpleName();
         for (String suffix : SUFFIXES) {
             if (tag.endsWith(suffix)) {
+            	// 截取类名前缀，即删除后缀Config、Bean
                 tag = tag.substring(0, tag.length() - suffix.length());
                 break;
             }
@@ -295,6 +303,13 @@ public abstract class AbstractConfig implements Serializable {
                 || type == Object.class;
     }
 
+    /**
+     * 将字符串值value转换为对应的原始数据类型对象
+     * 
+     * @param type 转换后的数据类型
+     * @param value 原始字符串值
+     * @return
+     */
     private static Object convertPrimitive(Class<?> type, String value) {
         if (type == char.class || type == Character.class) {
             return value.length() > 0 ? value.charAt(0) : '\0';

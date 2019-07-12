@@ -231,6 +231,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
          */
     }
 
+    /**
+     * <pre>
+     * 导出中的配置检查的逻辑进行简单的总结，如下：
+检测 <dubbo:service> 标签的 interface 属性合法性，不合法则抛出异常
+检测 ProviderConfig、ApplicationConfig 等核心配置类对象是否为空，若为空，则尝试从其他配置类对象中获取相应的实例。
+检测并处理泛化服务和普通服务类
+检测本地存根配置，并进行相应的处理
+对 ApplicationConfig、RegistryConfig 等配置类进行检测，为空则尝试创建，若无法创建则抛出异常
+     * </pre>
+     */
     protected synchronized void doExport() {
         if (unexported) {
             throw new IllegalStateException("Already unexported!");
@@ -385,9 +395,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         unexported = true;
     }
 
+    /**
+     * 多协议多注册中心导出服务。
+     * Dubbo 允许我们使用不同的协议导出服务，也允许我们向多个注册中心注册服务。
+     * Dubbo 在 doExportUrls 方法中对多协议，多注册中心进行了支持。
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+    	// 加载注册中心链接
         List<URL> registryURLs = loadRegistries(true);
+        // 遍历 protocols，并在每个协议下导出服务
         for (ProtocolConfig protocolConfig : protocols) {
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }

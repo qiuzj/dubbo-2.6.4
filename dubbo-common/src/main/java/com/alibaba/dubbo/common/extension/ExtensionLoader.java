@@ -67,7 +67,11 @@ public class ExtensionLoader<T> {
     private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
 
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
-    /** 每个type对应一个ExtensionLoader */
+    /**
+     * 每个SPI type对应一个ExtensionLoader
+     * {interface com.alibaba.dubbo.common.extension.ExtensionFactory=com.alibaba.dubbo.common.extension.ExtensionLoader[com.alibaba.dubbo.common.extension.ExtensionFactory], 
+     * interface org.apache.dubbo.spi.Robot=com.alibaba.dubbo.common.extension.ExtensionLoader[org.apache.dubbo.spi.Robot]}
+     */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
     /** Map<拓展类Class对象，拓展类实例对象> */
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
@@ -75,17 +79,32 @@ public class ExtensionLoader<T> {
     // ==============================
     /** 拓展类Class对象 */
     private final Class<?> type;
-    /** type为ExtensionFactory时objectFactory为null */
+    /**
+     * type为ExtensionFactory时objectFactory为null，其他默认为AdaptiveExtensionFactory
+     */
     private final ExtensionFactory objectFactory;
-
+    /**
+     * {class com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory=spring, class com.alibaba.dubbo.common.extension.factory.SpiExtensionFactory=spi}
+     * or
+     * {class org.apache.dubbo.spi.Bumblebee=bumblebee, class org.apache.dubbo.spi.OptimusPrime=optimusPrime}
+     */
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
-    /** 已加载的拓展类缓存. 格式：<拓展类属性名，拓展类Class对象> */
+    /**
+     * 已加载的拓展类缓存. 格式：<拓展类属性名，拓展类Class对象>
+     * {spring=class com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory, spi=class com.alibaba.dubbo.common.extension.factory.SpiExtensionFactory}
+     * or
+     * {optimusPrime=class org.apache.dubbo.spi.OptimusPrime, bumblebee=class org.apache.dubbo.spi.Bumblebee}
+     */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
 
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
+    /**
+     * {optimusPrime=com.alibaba.dubbo.common.utils.Holder@52e677af, bumblebee=com.alibaba.dubbo.common.utils.Holder@482cd91f}
+     */
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
-    /** 自适应拓展实例缓存 */
+    /** 自适应拓展实例对象缓存：com.alibaba.dubbo.common.extension.factory.AdaptiveExtensionFactory@8e0379d */
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
+    /** 自适应扩展工厂缓存：class com.alibaba.dubbo.common.extension.factory.AdaptiveExtensionFactory */
     private volatile Class<?> cachedAdaptiveClass = null;
     /** SPI注解值value.split(",")[0] */
     private String cachedDefaultName;
@@ -115,7 +134,7 @@ public class ExtensionLoader<T> {
             throw new IllegalArgumentException("Extension type(" + type +
                     ") is not extension, because WITHOUT @" + SPI.class.getSimpleName() + " Annotation!");
         }
-
+        // 第一次进来EXTENSION_LOADERS集合元素为空，loader为null
         ExtensionLoader<T> loader = (ExtensionLoader<T>) EXTENSION_LOADERS.get(type);
         if (loader == null) {
         	// 每个type对应一个ExtensionLoader
@@ -452,7 +471,7 @@ public class ExtensionLoader<T> {
                     instance = cachedAdaptiveInstance.get();
                     if (instance == null) {
                         try {
-                        	// 创建自适应拓展
+                        	// 创建自适应拓展对象：com.alibaba.dubbo.common.extension.factory.AdaptiveExtensionFactory@8e0379d
                             instance = createAdaptiveExtension();
                             // 设置自适应拓展到缓存中
                             cachedAdaptiveInstance.set(instance);
@@ -549,7 +568,7 @@ public class ExtensionLoader<T> {
                         try {
                         	// 获取属性名，比如 setName 方法对应属性名 name
                             String property = method.getName().length() > 3 ? method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4) : "";
-                            // 从 ObjectFactory 中获取依赖对象. pt:字段类型，property:字段名称
+                            // 从 ObjectFactory 中获取依赖对象. pt:字段类型，property:字段名称。通过SPI或Spring获取依赖对象
                             Object object = objectFactory.getExtension(pt, property);
                             if (object != null) {
                             	// 通过反射调用 setter 方法设置依赖
@@ -626,7 +645,7 @@ public class ExtensionLoader<T> {
         }
 
         Map<String, Class<?>> extensionClasses = new HashMap<String, Class<?>>();
-        // 加载指定文件夹下的配置文件
+        // 加载指定文件夹下的配置文件，尝试从不同目录去加载扩展
         loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY);
         loadDirectory(extensionClasses, DUBBO_DIRECTORY);
         loadDirectory(extensionClasses, SERVICES_DIRECTORY);
@@ -654,6 +673,7 @@ public class ExtensionLoader<T> {
             if (urls != null) {
                 while (urls.hasMoreElements()) {
                     java.net.URL resourceURL = urls.nextElement();
+                    System.out.println(String.format("[loadDirectory] fileName = dir + type.getName():%s, resourceURL:%s", fileName, resourceURL));
                     // 加载资源
                     loadResource(extensionClasses, classLoader, resourceURL);
                 }
@@ -678,6 +698,7 @@ public class ExtensionLoader<T> {
                 String line;
                 // 按行读取配置内容
                 while ((line = reader.readLine()) != null) {
+                	System.out.println(String.format("[loadResource] resourceURL:%s, line:%s", resourceURL, line));
                 	// 定位 # 字符
                     final int ci = line.indexOf('#');
                     // 截取 # 之前的字符串，# 之后的内容为注释，需要忽略
@@ -733,6 +754,7 @@ public class ExtensionLoader<T> {
             if (cachedAdaptiveClass == null) {
             	// 设置 cachedAdaptiveClass缓存
                 cachedAdaptiveClass = clazz;
+                System.out.println(String.format("[loadClass clazz.isAnnotationPresent(Adaptive.class)] resourceURL:%s, clazz:%s", resourceURL, clazz.toString()));
             } else if (!cachedAdaptiveClass.equals(clazz)) {
                 throw new IllegalStateException("More than 1 adaptive class found: "
                         + cachedAdaptiveClass.getClass().getName()
@@ -747,6 +769,7 @@ public class ExtensionLoader<T> {
             }
             // 存储 clazz 到 cachedWrapperClasses 缓存中
             wrappers.add(clazz);
+            System.out.println(String.format("[loadClass isWrapperClass(clazz)] resourceURL:%s, clazz:%s", resourceURL, clazz.toString()));
         // 程序进入此分支，表明 clazz 是一个普通的拓展类
         } else {
         	// 检测 clazz 是否有默认的构造方法，如果没有，则抛出异常
@@ -766,16 +789,19 @@ public class ExtensionLoader<T> {
                 	// 如果类上有 Activate 注解，则使用 names 数组的第一个元素作为键，
                     // 存储 name 到 Activate 注解对象的映射关系
                     cachedActivates.put(names[0], activate);
+                    System.out.println(String.format("[loadClass cachedActivates.put(names[0], activate)] resourceURL:%s, names[0]:%s, activate:%s", resourceURL, names[0], activate));
                 }
                 for (String n : names) {
                     if (!cachedNames.containsKey(clazz)) {
                     	// 存储 Class 到名称的映射关系
                         cachedNames.put(clazz, n);
+                        System.out.println(String.format("[loadClass cachedNames.put(clazz, n)] resourceURL:%s, clazz:%s, n:%s", resourceURL, clazz, n));
                     }
                     Class<?> c = extensionClasses.get(n);
                     if (c == null) {
                     	// 存储名称到 Class 的映射关系
                         extensionClasses.put(n, clazz);
+                        System.out.println(String.format("[loadClass extensionClasses.put(n, clazz)] resourceURL:%s, n:%s, clazz:%s", resourceURL, n, clazz));
                     } else if (c != clazz) {
                         throw new IllegalStateException("Duplicate extension " + type.getName() + " name " + n + " on " + c.getName() + " and " + clazz.getName());
                     }

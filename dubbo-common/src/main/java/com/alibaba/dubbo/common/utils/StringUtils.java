@@ -383,6 +383,18 @@ public final class StringUtils {
         return buf.toString();
     }
 
+    /**
+     * <pre>
+     * assertEquals("ab-cd-ef", StringUtils.camelToSplitName("abCdEf", "-"));
+     * assertEquals("ab-cd-ef", StringUtils.camelToSplitName("AbCdEf", "-"));
+     * assertEquals("ab-cd-ef", StringUtils.camelToSplitName("ab-cd-ef", "-"));
+     * assertEquals("abcdef", StringUtils.camelToSplitName("abcdef", "-"));
+     * </pre>
+     * 
+     * @param camelName
+     * @param split
+     * @return
+     */
     public static String camelToSplitName(String camelName, String split) {
         if (camelName == null || camelName.length() == 0) {
             return camelName;

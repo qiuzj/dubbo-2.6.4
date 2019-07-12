@@ -34,6 +34,9 @@ import java.util.List;
 @Adaptive
 public class AdaptiveExtensionFactory implements ExtensionFactory {
 
+	/**
+	 * [com.alibaba.dubbo.common.extension.factory.SpiExtensionFactory@2145433b, com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory@2890c451]
+	 */
     private final List<ExtensionFactory> factories;
 
     public AdaptiveExtensionFactory() {
