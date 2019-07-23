@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 /**
+ * 每个拓展接口对应一个ExtensionLoader.
  * Load dubbo extensions
  * <ul>
  * <li>auto inject dependency extension </li>
@@ -68,21 +69,29 @@ public class ExtensionLoader<T> {
 
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
     /**
-     * 每个SPI type对应一个ExtensionLoader
+     * 全局Map. 每个SPI接口对应一个ExtensionLoader.
      * {interface com.alibaba.dubbo.common.extension.ExtensionFactory=com.alibaba.dubbo.common.extension.ExtensionLoader[com.alibaba.dubbo.common.extension.ExtensionFactory], 
      * interface org.apache.dubbo.spi.Robot=com.alibaba.dubbo.common.extension.ExtensionLoader[org.apache.dubbo.spi.Robot]}
      */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
-    /** Map<拓展类Class对象，拓展类实例对象> */
+    /** 
+     * 全局Map. Map<拓展实现类的Class对象，拓展实现类的实例对象>.
+     * {class org.apache.dubbo.spi.Bumblebee=org.apache.dubbo.spi.Bumblebee@2145433b, 
+     * class com.alibaba.dubbo.common.extension.factory.SpiExtensionFactory=com.alibaba.dubbo.common.extension.factory.SpiExtensionFactory@52e677af, 
+     * class org.apache.dubbo.spi.OptimusPrime=org.apache.dubbo.spi.OptimusPrime@55a1c291, 
+     * class com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory=com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory@35083305}
+     */
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     // ==============================
-    /** 拓展类Class对象 */
+    /** 拓展SPI接口Class对象 */
     private final Class<?> type;
     /**
-     * type为ExtensionFactory时objectFactory为null，其他默认为AdaptiveExtensionFactory
+     * type为ExtensionFactory时objectFactory为null，其他默认为AdaptiveExtensionFactory.
+     * 每个SPI接口，对应一个拓展工厂ExtensionFactory，通过这个工厂，可以获取依赖对象，将对象注入相应的SPI实现类.
      */
     private final ExtensionFactory objectFactory;
+    
     /**
      * {class com.alibaba.dubbo.config.spring.extension.SpringExtensionFactory=spring, class com.alibaba.dubbo.common.extension.factory.SpiExtensionFactory=spi}
      * or
@@ -102,12 +111,15 @@ public class ExtensionLoader<T> {
      * {optimusPrime=com.alibaba.dubbo.common.utils.Holder@52e677af, bumblebee=com.alibaba.dubbo.common.utils.Holder@482cd91f}
      */
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
+    
     /** 自适应拓展实例对象缓存：com.alibaba.dubbo.common.extension.factory.AdaptiveExtensionFactory@8e0379d */
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
     /** 自适应扩展工厂缓存：class com.alibaba.dubbo.common.extension.factory.AdaptiveExtensionFactory */
     private volatile Class<?> cachedAdaptiveClass = null;
+    
     /** SPI注解值value.split(",")[0] */
     private String cachedDefaultName;
+    
     private volatile Throwable createAdaptiveInstanceError;
 
     private Set<Class<?>> cachedWrapperClasses;
@@ -115,7 +127,10 @@ public class ExtensionLoader<T> {
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<String, IllegalStateException>();
 
     private ExtensionLoader(Class<?> type) {
-        this.type = type;
+        this.type = type; // SPI接口Class对象
+        // type为ExtensionFactory时objectFactory为null，其他默认为AdaptiveExtensionFactory.
+        // 首次使用该构造函数时，会初始化type为ExtensionFactory的ExtensionLoader，再初始化当前SPI接口的ExtensionLoader
+        // 其他SPI只需要初始化自己的ExtensionLoader
         objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
