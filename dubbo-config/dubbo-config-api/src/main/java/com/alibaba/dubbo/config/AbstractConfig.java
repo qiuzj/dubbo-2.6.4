@@ -100,6 +100,10 @@ public abstract class AbstractConfig implements Serializable {
         // dubbo."截取类名前缀小写，即删除后缀Config、Bean".
         String prefix = "dubbo." + getTagName(config.getClass()) + ".";
         Method[] methods = config.getClass().getMethods();
+        /*
+         * 循环config的每一个public set$Name($Type $value)方法，然后通过$Name构造出属性key去各种获取值，
+         * 最后调用set$Name方法，将查到的值$value设置回config对象.
+         */
         for (Method method : methods) {
             try {
                 String name = method.getName();
@@ -126,10 +130,10 @@ public abstract class AbstractConfig implements Serializable {
                     }
                     if (value == null || value.length() == 0) {
                         Method getter;
-                        try {
+                        try { // 反射获取getter方法
                             getter = config.getClass().getMethod("get" + name.substring(3));
                         } catch (NoSuchMethodException e) {
-                            try {
+                            try { // getter获取不到则获取isser
                                 getter = config.getClass().getMethod("is" + name.substring(3));
                             } catch (NoSuchMethodException e2) {
                                 getter = null;
@@ -153,6 +157,7 @@ public abstract class AbstractConfig implements Serializable {
                             }
                         }
                     }
+                    // 上面这一坨，就是为了获取setter方法对应的属性的配置值，然后通过下面反射设置回config对象
                     if (value != null && value.length() > 0) {
                         method.invoke(config, convertPrimitive(method.getParameterTypes()[0], value));
                     }
