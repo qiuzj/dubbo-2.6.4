@@ -65,6 +65,7 @@ public class UrlUtils {
             defaultParameters.remove("port");
             defaultParameters.remove("path");
         }
+        // 解析URL：protocol、username、password、host、port、path、parameters，封装并构造出alibaba的URL对象
         URL u = URL.valueOf(url);
         boolean changed = false;
         String protocol = u.getProtocol();

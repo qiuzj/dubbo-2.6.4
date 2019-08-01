@@ -156,7 +156,7 @@ public final class URL implements Serializable {
         this.password = password;
         this.host = host;
         this.port = (port < 0 ? 0 : port);
-        // trim the beginning "/"
+        // trim the beginning "/", 删除path开头的n个连续/
         while (path != null && path.startsWith("/")) {
             path = path.substring(1);
         }
@@ -170,6 +170,8 @@ public final class URL implements Serializable {
     }
 
     /**
+     * 解析URL：protocol、username、password、host、port、path、parameters，封装并构造出alibaba的URL对象
+     * <br>
      * Parse url string
      *
      * @param url URL string
@@ -186,6 +188,9 @@ public final class URL implements Serializable {
         String host = null;
         int port = 0;
         String path = null;
+        /*
+         * 将URL中的参数以<key, value>的形式保存到parameters中。如果只有key，则value也等于key，即<key, key>
+         */
         Map<String, String> parameters = null;
         int i = url.indexOf("?"); // seperator between body and parameters 
         if (i >= 0) {
@@ -202,29 +207,32 @@ public final class URL implements Serializable {
                     }
                 }
             }
+            // url去掉参数部分，即问号及之后的参数内容
             url = url.substring(0, i);
         }
         i = url.indexOf("://");
+        // 获取protocol://之后的URL内容
         if (i >= 0) {
             if (i == 0) throw new IllegalStateException("url missing protocol: \"" + url + "\"");
-            protocol = url.substring(0, i);
-            url = url.substring(i + 3);
+            protocol = url.substring(0, i); // 获取URL的protocol内容
+            url = url.substring(i + 3); // 获取protocol://之后的URL内容
         } else {
             // case: file:/path/to/file.txt
             i = url.indexOf(":/");
             if (i >= 0) {
                 if (i == 0) throw new IllegalStateException("url missing protocol: \"" + url + "\"");
                 protocol = url.substring(0, i);
-                url = url.substring(i + 1);
+                url = url.substring(i + 1); // 为什么不是加2？
             }
         }
 
         i = url.indexOf("/");
         if (i >= 0) {
-            path = url.substring(i + 1);
-            url = url.substring(0, i);
+            path = url.substring(i + 1); // 主机名之后的内容？
+            url = url.substring(0, i); // 主机名部分内容？
         }
         i = url.lastIndexOf("@");
+        // 账号+密码
         if (i >= 0) {
             username = url.substring(0, i);
             int j = username.indexOf(":");
@@ -235,6 +243,7 @@ public final class URL implements Serializable {
             url = url.substring(i + 1);
         }
         i = url.indexOf(":");
+        // 获取端口号
         if (i >= 0 && i < url.length() - 1) {
             port = Integer.parseInt(url.substring(i + 1));
             url = url.substring(0, i);
