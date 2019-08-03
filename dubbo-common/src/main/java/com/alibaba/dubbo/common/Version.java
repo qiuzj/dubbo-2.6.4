@@ -121,15 +121,25 @@ public final class Version {
         }
     }
 
+    /**
+     * 获得版本号.<br>
+     * 先从MANIFEST.MF文件中获取Implementation-Version或Specification-Version，
+     * 如果获取不到，再从jar包名称中尝试获取
+     *
+     * @param cls
+     * @param defaultVersion
+     * @return
+     */
     public static String getVersion(Class<?> cls, String defaultVersion) {
         try {
             // find version info from MANIFEST.MF first
-            String version = cls.getPackage().getImplementationVersion();
+            String version = cls.getPackage().getImplementationVersion(); // Implementation-Version: 1.5.10.RELEASE
             if (version == null || version.length() == 0) {
-                version = cls.getPackage().getSpecificationVersion();
+                version = cls.getPackage().getSpecificationVersion(); // Specification-Version: 1.5.10.RELEASE
             }
             if (version == null || version.length() == 0) {
                 // guess version fro jar file name if nothing's found from MANIFEST.MF
+                // 若获取不到，从 jar 包命名中可能带的版本号作为结果
                 CodeSource codeSource = cls.getProtectionDomain().getCodeSource();
                 if (codeSource == null) {
                     logger.info("No codeSource for class " + cls.getName() + " when getVersion, use default version " + defaultVersion);

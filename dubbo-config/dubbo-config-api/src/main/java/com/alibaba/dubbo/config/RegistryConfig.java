@@ -22,7 +22,10 @@ import com.alibaba.dubbo.config.support.Parameter;
 import java.util.Map;
 
 /**
- * RegistryConfig
+ * RegistryConfig<br>
+ * 注册中心配置。对应的配置类： org.apache.dubbo.config.RegistryConfig。
+ * 同时如果有多个不同的注册中心，可以声明多个 <dubbo:registry> 标签，
+ * 并在 <dubbo:service> 或 <dubbo:reference> 的 registry 属性指定使用的注册中心。
  *
  * @export
  */

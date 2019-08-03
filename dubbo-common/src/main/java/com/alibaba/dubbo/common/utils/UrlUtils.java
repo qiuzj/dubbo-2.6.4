@@ -27,16 +27,25 @@ import java.util.Set;
 
 public class UrlUtils {
 
+    /**
+     * 解析address，并构造URL对象
+     *
+     * @param address 地址字符串，可能是以逗号分隔的多个地址
+     * @param defaults 默认Map参数集合，用于在address缺少某个URL属性的情况下，进行默认值替代
+     * @return
+     */
     public static URL parseURL(String address, Map<String, String> defaults) {
         if (address == null || address.length() == 0) {
             return null;
         }
         String url;
+        // 如果地址包含"://"，则直接赋给url
         if (address.indexOf("://") >= 0) {
             url = address;
-        } else {
-            String[] addresses = Constants.COMMA_SPLIT_PATTERN.split(address);
-            url = addresses[0];
+        } else { // 如果地址不包含"://"，则使用逗号分隔adress为多个地址
+            String[] addresses = Constants.COMMA_SPLIT_PATTERN.split(address); // 逗号分隔地址
+            url = addresses[0]; // 取第一个地址，其他作为备用地址
+            // 组装备用地址url += "?backup=url1,url2,url3..."
             if (addresses.length > 1) {
                 StringBuilder backup = new StringBuilder();
                 for (int i = 1; i < addresses.length; i++) {
@@ -48,6 +57,7 @@ public class UrlUtils {
                 url += "?" + Constants.BACKUP_KEY + "=" + backup.toString();
             }
         }
+        // 获取协议protocol
         String defaultProtocol = defaults == null ? null : defaults.get("protocol");
         if (defaultProtocol == null || defaultProtocol.length() == 0) {
             defaultProtocol = "dubbo";
@@ -57,6 +67,7 @@ public class UrlUtils {
         int defaultPort = StringUtils.parseInteger(defaults == null ? null : defaults.get("port"));
         String defaultPath = defaults == null ? null : defaults.get("path");
         Map<String, String> defaultParameters = defaults == null ? null : new HashMap<String, String>(defaults);
+        // 为何移除这几项？
         if (defaultParameters != null) {
             defaultParameters.remove("protocol");
             defaultParameters.remove("username");
@@ -65,6 +76,7 @@ public class UrlUtils {
             defaultParameters.remove("port");
             defaultParameters.remove("path");
         }
+
         // 解析URL：protocol、username、password、host、port、path、parameters，封装并构造出alibaba的URL对象
         URL u = URL.valueOf(url);
         boolean changed = false;
@@ -75,6 +87,9 @@ public class UrlUtils {
         int port = u.getPort();
         String path = u.getPath();
         Map<String, String> parameters = new HashMap<String, String>(u.getParameters());
+        /*
+         * 以下主要是为了处理URL中缺少某一项属性，使用默认属性进行设置，最后重新构造出URL对象
+         */
         if ((protocol == null || protocol.length() == 0) && defaultProtocol != null && defaultProtocol.length() > 0) {
             changed = true;
             protocol = defaultProtocol;
@@ -107,6 +122,7 @@ public class UrlUtils {
             }
         }
         if (defaultParameters != null && defaultParameters.size() > 0) {
+            // 遍历传入的defaults集合，如果从address中解析出的URL中，不存在相应属性，则多defaults中获取并设置到URL的参数集合中
             for (Map.Entry<String, String> entry : defaultParameters.entrySet()) {
                 String key = entry.getKey();
                 String defaultValue = entry.getValue();
@@ -119,21 +135,31 @@ public class UrlUtils {
                 }
             }
         }
+        // 如果从address中解析出来的参数中，缺少任何一项，则将通过默认设置来赋值，这时changed将为true，需要重新构建URL
         if (changed) {
             u = new URL(protocol, username, password, host, port, path, parameters);
         }
         return u;
     }
 
+    /**
+     * 解析所有注册中心地址，并构造相应的URL对象，不存在的属性从defaults中获取并设置到URL对象的parameters对象中，
+     * 最后构造出所有注册中心URL对象的集合列表
+     *
+     * @param address
+     * @param defaults
+     * @return
+     */
     public static List<URL> parseURLs(String address, Map<String, String> defaults) {
         if (address == null || address.length() == 0) {
             return null;
         }
-        String[] addresses = Constants.REGISTRY_SPLIT_PATTERN.split(address);
+        String[] addresses = Constants.REGISTRY_SPLIT_PATTERN.split(address); // 分割多个注册中心地址
         if (addresses == null || addresses.length == 0) {
             return null; //here won't be empty
         }
         List<URL> registries = new ArrayList<URL>();
+        // 解析每个注册中心地址，并构造URL对象添加到注册中心URL列表中
         for (String addr : addresses) {
             registries.add(parseURL(addr, defaults));
         }

@@ -84,8 +84,14 @@ public final class URL implements Serializable {
     // by default, port to registry
     private final int port;
 
+    /**
+     * 主机名之后，参数(?)之前的URL相对地址
+     */
     private final String path;
 
+    /**
+     * URL的参数集合
+     */
     private final Map<String, String> parameters;
 
     // ==== cache ====
@@ -146,6 +152,17 @@ public final class URL implements Serializable {
         this(protocol, username, password, host, port, path, CollectionUtils.toStringMap(pairs));
     }
 
+    /**
+     * URL构造函数
+     *
+     * @param protocol
+     * @param username
+     * @param password
+     * @param host
+     * @param port
+     * @param path 主机名之后参数之前的URL相对路径
+     * @param parameters URL的参数列表，即?之后的参数转换为Map集合
+     */
     public URL(String protocol, String username, String password, String host, int port, String path, Map<String, String> parameters) {
         if ((username == null || username.length() == 0)
                 && password != null && password.length() > 0) {
@@ -192,16 +209,17 @@ public final class URL implements Serializable {
          * 将URL中的参数以<key, value>的形式保存到parameters中。如果只有key，则value也等于key，即<key, key>
          */
         Map<String, String> parameters = null;
-        int i = url.indexOf("?"); // seperator between body and parameters 
+        int i = url.indexOf("?"); // seperator between body and parameters
+        // 如果URL存在参数（?之后有参数）
         if (i >= 0) {
-            String[] parts = url.substring(i + 1).split("\\&");
+            String[] parts = url.substring(i + 1).split("\\&"); // URL的参数字符串
             parameters = new HashMap<String, String>();
             for (String part : parts) {
-                part = part.trim();
+                part = part.trim(); // 第一个参数，如port=2080
                 if (part.length() > 0) {
                     int j = part.indexOf('=');
                     if (j >= 0) {
-                        parameters.put(part.substring(0, j), part.substring(j + 1));
+                        parameters.put(part.substring(0, j), part.substring(j + 1)); // 例如<port, 2080>
                     } else {
                         parameters.put(part, part);
                     }
@@ -221,32 +239,32 @@ public final class URL implements Serializable {
             i = url.indexOf(":/");
             if (i >= 0) {
                 if (i == 0) throw new IllegalStateException("url missing protocol: \"" + url + "\"");
-                protocol = url.substring(0, i);
-                url = url.substring(i + 1); // 为什么不是加2？
+                protocol = url.substring(0, i); // 获取URL的protocol内容
+                url = url.substring(i + 1); // 为什么不是加2？是想保留/以/开头吗？
             }
         }
 
         i = url.indexOf("/");
         if (i >= 0) {
-            path = url.substring(i + 1); // 主机名之后的内容？
-            url = url.substring(0, i); // 主机名部分内容？
+            path = url.substring(i + 1); // 主机名之后，参数之前的URL相对路径. 例如path/to/file.txt
+            url = url.substring(0, i); // 主机名部分内容. 例如username:password@host:port
         }
         i = url.lastIndexOf("@");
         // 账号+密码
         if (i >= 0) {
-            username = url.substring(0, i);
+            username = url.substring(0, i); // 例如username:password
             int j = username.indexOf(":");
             if (j >= 0) {
                 password = username.substring(j + 1);
                 username = username.substring(0, j);
             }
-            url = url.substring(i + 1);
+            url = url.substring(i + 1); // 例如host:port
         }
         i = url.indexOf(":");
         // 获取端口号
         if (i >= 0 && i < url.length() - 1) {
             port = Integer.parseInt(url.substring(i + 1));
-            url = url.substring(0, i);
+            url = url.substring(0, i); // host
         }
         if (url.length() > 0) host = url;
         return new URL(protocol, username, password, host, port, path, parameters);
@@ -941,6 +959,7 @@ public final class URL implements Serializable {
             return this;
         }
 
+        /* 为什么重新构造参数对象和URL对象？？防止影响正在使用的程序？ */
         Map<String, String> map = new HashMap<String, String>(getParameters());
         map.put(key, value);
         return new URL(protocol, username, password, host, port, path, map);
