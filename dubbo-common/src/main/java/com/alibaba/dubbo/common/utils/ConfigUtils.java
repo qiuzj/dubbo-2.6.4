@@ -296,7 +296,7 @@ public class ConfigUtils {
             try {
                 RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
                 String name = runtime.getName(); // format: "pid@hostname"
-                PID = Integer.parseInt(name.substring(0, name.indexOf('@')));
+                PID = Integer.parseInt(name.substring(0, name.indexOf('@'))); // 例如，获取"pid@hostname"中的pid
             } catch (Throwable e) {
                 PID = 0;
             }
