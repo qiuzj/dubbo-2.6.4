@@ -266,6 +266,12 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         return registryList;
     }
 
+    /**
+     * 初始化MonitorConfig，拼装URL
+     *
+     * @param registryURL
+     * @return
+     */
     protected URL loadMonitor(URL registryURL) {
         if (monitor == null) {
             String monitorAddress = ConfigUtils.getProperty("dubbo.monitor.address");
@@ -313,7 +319,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     map.put(Constants.PROTOCOL_KEY, "dubbo");
                 }
             }
-            return UrlUtils.parseURL(address, map);
+            return UrlUtils.parseURL(address, map); // 如果address没有的属性，则使用map中的属性值
         } else if (Constants.REGISTRY_PROTOCOL.equals(monitor.getProtocol()) && registryURL != null) {
             return registryURL.setProtocol("dubbo").addParameter(Constants.PROTOCOL_KEY, "registry").addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map));
         }

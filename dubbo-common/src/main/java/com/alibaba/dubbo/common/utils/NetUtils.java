@@ -142,6 +142,11 @@ public class NetUtils {
                 && IP_PATTERN.matcher(name).matches());
     }
 
+    /**
+     * Find first valid IP from local network card
+     *
+     * @return
+     */
     public static String getLocalHost() {
         InetAddress address = getLocalAddress();
         return address == null ? LOCALHOST : address.getHostAddress();
