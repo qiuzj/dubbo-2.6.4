@@ -224,7 +224,7 @@ public final class ReflectUtils {
     }
 
     /**
-     * get name.
+     * get name. 获取普通类的类名或数组类型名称
      * java.lang.Object[][].class => "java.lang.Object[][]"
      *
      * @param c class.
@@ -327,7 +327,7 @@ public final class ReflectUtils {
     }
 
     /**
-     * get class desc.
+     * get class desc. 根据JVM规范，获取类的类型描述字符串
      * boolean[].class => "[Z"
      * Object.class => "Ljava/lang/Object;"
      *
@@ -381,7 +381,7 @@ public final class ReflectUtils {
     }
 
     /**
-     * get method desc.
+     * get method desc. 获取方法描述述，与JVM规范一致
      * int do(int arg1) => "do(I)I"
      * void do(String arg1,boolean arg2) => "do(Ljava/lang/String;Z)V"
      *
