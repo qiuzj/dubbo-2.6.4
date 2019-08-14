@@ -196,7 +196,7 @@ public class RegistryProtocol implements Protocol {
                 if (exporter == null) {
                     // 创建 Invoker 为委托类对象
                     final Invoker<?> invokerDelegete = new InvokerDelegete<T>(originInvoker, getProviderUrl(originInvoker));
-                    // 调用 protocol 的 export 方法导出服务
+                    // 调用 protocol 的 export 方法导出服务. DubboProtocol.export
                     exporter = new ExporterChangeableWrapper<T>((Exporter<T>) protocol.export(invokerDelegete), originInvoker);
                     // 写缓存
                     bounds.put(key, exporter);

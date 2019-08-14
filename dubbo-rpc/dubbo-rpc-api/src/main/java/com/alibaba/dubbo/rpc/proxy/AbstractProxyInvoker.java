@@ -29,9 +29,9 @@ import java.lang.reflect.InvocationTargetException;
  * InvokerWrapper
  */
 public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
-
+    /** 接口类实现实例对象 */
     private final T proxy;
-
+    /** 接口类类型 */
     private final Class<T> type;
 
     private final URL url;
