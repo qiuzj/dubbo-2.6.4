@@ -148,7 +148,7 @@ public class ClassHelper {
         }
 
         // "java.lang.String[]" style arrays
-        if (name.endsWith(ARRAY_SUFFIX)) {
+        if (name.endsWith(ARRAY_SUFFIX)) { // 数组Class类型
             String elementClassName = name.substring(0, name.length() - ARRAY_SUFFIX.length());
             Class<?> elementClass = forName(elementClassName, classLoader);
             return Array.newInstance(elementClass, 0).getClass();
@@ -191,8 +191,8 @@ public class ClassHelper {
         Class<?> result = null;
         // Most class names will be quite long, considering that they
         // SHOULD sit in a package, so a length check is worthwhile.
-        if (name != null && name.length() <= 8) {
-            // Could be a primitive - likely.
+        if (name != null && name.length() <= 8) { // 为什么用8而不是7，最长是Integer、Boolean?
+            // Could be a primitive - likely. 例如"int" -> "int.class"
             result = (Class<?>) primitiveTypeNameMap.get(name);
         }
         return result;

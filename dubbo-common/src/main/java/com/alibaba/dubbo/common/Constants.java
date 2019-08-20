@@ -56,7 +56,7 @@ public class Constants {
     public static final String VALIDATION_KEY = "validation";
 
     public static final String CACHE_KEY = "cache";
-
+    // "dynamic"：服务是否动态注册，如果设为false，注册后将显示后disable状态，需人工启用，并且服务提供者停止时，也不会自动取消册，需人工禁用。
     public static final String DYNAMIC_KEY = "dynamic";
     /** dubbo属性文件路径 */
     public static final String DUBBO_PROPERTIES_KEY = "dubbo.properties.file";
@@ -286,7 +286,7 @@ public class Constants {
     public static final String TOKEN_KEY = "token";
 
     public static final String METHOD_KEY = "method";
-
+    // Map's key：将逗号作为分隔符连接方法名，并将连接后的字符串放入 map 中
     public static final String METHODS_KEY = "methods";
 
     public static final String CHARSET_KEY = "charset";

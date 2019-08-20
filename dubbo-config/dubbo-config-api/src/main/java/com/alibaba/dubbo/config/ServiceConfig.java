@@ -80,9 +80,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
     private final List<URL> urls = new ArrayList<URL>();
+    // 已导出的Exporter列表集合
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
     // interface type
     private String interfaceName;
+    /** 服务接口Class类实例 */
     private Class<?> interfaceClass;
     // reference to interface impl
     private T ref;
@@ -94,7 +96,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private transient volatile boolean exported;
 
     private transient volatile boolean unexported;
-
+    /** GenericService泛型接口标志，值为"true"或"false" */
     private volatile String generic;
 
     public ServiceConfig() {
@@ -297,6 +299,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 monitor = application.getMonitor();
             }
         }
+
+
+        /* 服务接口检查 */
         // 检测 ref 是否为泛化服务类型
         if (ref instanceof GenericService) {
         	// 设置 interfaceClass 为 GenericService.class
@@ -316,11 +321,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             // 对 interfaceClass，以及 <dubbo:method> 标签中的必要字段进行检查
             // interfaceClass是否为null，是否为接口。methods是否为null，interfaceClass中是否有该方法。
             checkInterfaceAndMethods(interfaceClass, methods);
-            // 对 ref 合法性进行检测
+            // 对 ref 合法性进行检测. ref是否为interfaceClass的实例. true if ref is an instance of interfaceClass
             checkRef();
             // 设置 generic = "false"
             generic = Boolean.FALSE.toString();
         }
+
+
         // local 和 stub 在功能应该是一致的，用于配置本地存根
         // 处理服务接口客户端本地代理( `local` )相关。实际目前已经废弃，使用 `stub` 属性，参见 `AbstractInterfaceConfig#setLocal` 方法。
         if (local != null) {
@@ -347,7 +354,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             }
             Class<?> stubClass;
             try {
-                stubClass = ClassHelper.forNameWithThreadContextClassLoader(stub);
+                stubClass = ClassHelper.forNameWithThreadContextClassLoader(stub); // stub类Class对象
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
@@ -377,11 +384,15 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         ApplicationModel.initProviderModel(getUniqueServiceName(), providerModel);
     }
 
+    /**
+     * ref是否为interfaceClass的实例. true if ref is an instance of interfaceClass
+     */
     private void checkRef() {
         // reference should not be null, and is the implementation of the given interface
         if (ref == null) {
             throw new IllegalStateException("ref not allow null!");
         }
+        // This method is the dynamic equivalent of the Java language instanceof operator
         if (!interfaceClass.isInstance(ref)) {
             throw new IllegalStateException("The class "
                     + ref.getClass().getName() + " unimplemented interface "
@@ -639,8 +650,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 }
                 if (registryURLs != null && !registryURLs.isEmpty()) {
                     for (URL registryURL : registryURLs) {
+                        // "dynamic"：服务是否动态注册，如果设为false，注册后将显示后disable状态，需人工启用，并且服务提供者停止时，也不会自动取消册，需人工禁用。
                         url = url.addParameterIfAbsent(Constants.DYNAMIC_KEY, registryURL.getParameter(Constants.DYNAMIC_KEY));
-                        // 加载监视器链接
+                        // 加载监视器链接. 获得监控中心 URL
                         URL monitorUrl = loadMonitor(registryURL);
                         if (monitorUrl != null) {
                             // 将监视器链接作为参数添加到 url 中
@@ -661,11 +673,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // DelegateProviderMetaDataInvoker 用于持有 Invoker 和 ServiceConfig
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
-                        // 导出服务，并生成 Exporter. RegistryProtocol.export
+                        // 导出服务，并生成 Exporter. RegistryProtocol.export. 使用 Protocol 暴露 Invoker 对象
+                        // 添加到 `exporters`
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
                 // 不存在注册中心，仅导出服务
+                // 用于被服务消费者直连服务提供者，参见文档 http://dubbo.apache.org/zh-cn/docs/user/demos/explicit-target.html 。主要用于开发测试环境使用。
                 } else {
                     Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, url);
                     DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);

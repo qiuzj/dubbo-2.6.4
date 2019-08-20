@@ -198,9 +198,9 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
      * <pre>
      * 加载注册中心链接。
      * 检测是否存在注册中心配置类，不存在则抛出异常
-构建参数映射集合，也就是 map
-构建注册中心链接列表
-遍历链接列表，并根据条件决定是否将其添加到 registryList 中
+     * 构建参数映射集合，也就是 map
+     * 构建注册中心链接列表
+     * 遍历链接列表，并根据条件决定是否将其添加到 registryList 中
      * </pre>
      * 
      * @param provider 是否为provider，否则为consumer
