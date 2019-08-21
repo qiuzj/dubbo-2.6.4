@@ -291,6 +291,11 @@ public class ConfigUtils {
         return properties;
     }
 
+    /**
+     * 调用ManagementFactory.getRuntimeMXBean().getName()："pid@hostname"，返回pid
+     *
+     * @return
+     */
     public static int getPid() {
         if (PID < 0) {
             try {

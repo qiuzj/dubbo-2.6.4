@@ -895,6 +895,13 @@ public final class URL implements Serializable {
         return Constants.ANYHOST_VALUE.equals(host) || getParameter(Constants.ANYHOST_KEY, false);
     }
 
+    /**
+     * 添加URL参数，value进行URLEncoder.encode(value, "UTF-8")
+     *
+     * @param key
+     * @param value
+     * @return
+     */
     public URL addParameterAndEncoded(String key, String value) {
         if (value == null || value.length() == 0) {
             return this;
@@ -949,6 +956,13 @@ public final class URL implements Serializable {
         return addParameter(key, String.valueOf(value));
     }
 
+    /**
+     * 添加URL参数
+     *
+     * @param key
+     * @param value
+     * @return
+     */
     public URL addParameter(String key, String value) {
         if (key == null || key.length() == 0
                 || value == null || value.length() == 0) {

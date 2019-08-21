@@ -143,6 +143,7 @@ public class NetUtils {
     }
 
     /**
+     * 从本地网卡中找到第一个有效的IP.
      * Find first valid IP from local network card
      *
      * @return
