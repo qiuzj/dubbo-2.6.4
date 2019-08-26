@@ -213,6 +213,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         List<URL> registryList = new ArrayList<URL>();
         if (registries != null && !registries.isEmpty()) {
             for (RegistryConfig config : registries) {
+                // 获得注册中心的地址
                 String address = config.getAddress();
                 if (address == null || address.length() == 0) {
                 	// 若 address 为空，则将其设为 0.0.0.0
@@ -238,8 +239,9 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     if (ConfigUtils.getPid() > 0) {
                         map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
                     }
+                    // 若不存在 `protocol` 参数，默认 "dubbo" 添加到 `map` 集合中。
                     if (!map.containsKey("protocol")) {
-                        if (ExtensionLoader.getExtensionLoader(RegistryFactory.class).hasExtension("remote")) {
+                        if (ExtensionLoader.getExtensionLoader(RegistryFactory.class).hasExtension("remote")) { // 可以忽略。因为，remote 这个拓展实现已经不存在?
                             map.put("protocol", "remote");
                         } else {
                             map.put("protocol", "dubbo");
@@ -248,15 +250,17 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     // 解析得到 URL 列表，address 可能包含多个注册中心 ip，
                     // 因此解析得到的是一个 URL 列表
                     List<URL> urls = UrlUtils.parseURLs(address, map);
+                    // 循环 `url` ，设置 "registry" 和 "protocol" 属性。
                     for (URL url : urls) {
+                        // 设置 `registry=${protocol}` 和 `protocol=registry` 到 URL
                         url = url.addParameter(Constants.REGISTRY_KEY, url.getProtocol());
                         // 将 URL 协议头设置为 registry
                         url = url.setProtocol(Constants.REGISTRY_PROTOCOL);
                         // 通过判断条件，决定是否添加 url 到 registryList 中，条件如下：
                         // (服务提供者 && register = true 或 null) 
                         //    || (非服务提供者 && subscribe = true 或 null)
-                        if ((provider && url.getParameter(Constants.REGISTER_KEY, true)) // provider
-                                || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) { // or consumer
+                        if ((provider && url.getParameter(Constants.REGISTER_KEY, true)) // provider. 服务提供者 && 注册
+                                || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) { // or consumer. 服务提供者 && 注册
                             registryList.add(url);
                         }
                     }

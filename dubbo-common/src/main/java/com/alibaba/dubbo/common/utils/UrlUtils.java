@@ -144,7 +144,12 @@ public class UrlUtils {
 
     /**
      * 解析所有注册中心地址，并构造相应的URL对象，不存在的属性从defaults中获取并设置到URL对象的parameters对象中，
-     * 最后构造出所有注册中心URL对象的集合列表
+     * 最后构造出所有注册中心URL对象的集合列表。
+     *
+     * 解析单个 URL ，将 `defaults` 里的参数，合并到 `address` 中。
+     * 合并的逻辑如下：
+     * 我们可以把 `address` 认为是 url ；`defaults` 认为是 defaultURL 。
+     * 若 url 有不存在的属性时，从 defaultURL 获得对应的属性，设置到 url 中。
      *
      * @param address
      * @param defaults
@@ -154,6 +159,7 @@ public class UrlUtils {
         if (address == null || address.length() == 0) {
             return null;
         }
+        // 使用 "|" 或者 ";" 作为分隔符，设置多个注册中心分组。注意，一个注册中心集群是一个分组，而不是多个。
         String[] addresses = Constants.REGISTRY_SPLIT_PATTERN.split(address); // 分割多个注册中心地址
         if (addresses == null || addresses.length == 0) {
             return null; //here won't be empty

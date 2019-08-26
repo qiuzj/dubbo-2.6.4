@@ -357,7 +357,7 @@ public class Constants {
     public final static String PATH_SEPARATOR = "/";
 
     public static final String REGISTRY_SEPARATOR = "|";
-
+    /** 使用 "|" 或者 ";" 作为分隔符 */
     public static final Pattern REGISTRY_SPLIT_PATTERN = Pattern
             .compile("\\s*[|;]+\\s*");
 
