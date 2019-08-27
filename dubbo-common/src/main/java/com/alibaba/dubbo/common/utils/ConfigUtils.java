@@ -44,10 +44,22 @@ public class ConfigUtils {
     private ConfigUtils() {
     }
 
+    /**
+     * 是否为非null、空字符串、"false"、"0"、"null"或"N/A"
+     *
+     * @param value
+     * @return
+     */
     public static boolean isNotEmpty(String value) {
         return !isEmpty(value);
     }
 
+    /**
+     * 是否为null、空字符串、"false"、"0"、"null"或"N/A"
+     *
+     * @param value
+     * @return
+     */
     public static boolean isEmpty(String value) {
         return value == null || value.length() == 0
                 || "false".equalsIgnoreCase(value)

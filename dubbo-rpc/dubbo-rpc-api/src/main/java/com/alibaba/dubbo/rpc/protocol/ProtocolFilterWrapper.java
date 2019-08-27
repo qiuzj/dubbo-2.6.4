@@ -30,6 +30,7 @@ import com.alibaba.dubbo.rpc.RpcException;
 import java.util.List;
 
 /**
+ * 实现 Protocol 接口，Protocol 的 Wrapper 拓展实现类，用于给 Invoker 增加过滤链。
  * ListenerProtocol
  */
 public class ProtocolFilterWrapper implements Protocol {
@@ -94,9 +95,11 @@ public class ProtocolFilterWrapper implements Protocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 注册中心
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             return protocol.export(invoker);
         }
+        // 建立带有 Filter 过滤链的 Invoker，再暴露服务。
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 

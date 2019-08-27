@@ -105,7 +105,7 @@ public class ExtensionLoader<T> {
      * {optimusPrime=class org.apache.dubbo.spi.OptimusPrime, bumblebee=class org.apache.dubbo.spi.Bumblebee}
      */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
-
+    /** 已缓存的激活注解映射对象，格式：<拓展点名称, Activate注解对象>？ */
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
     /**
      * {optimusPrime=com.alibaba.dubbo.common.utils.Holder@52e677af, bumblebee=com.alibaba.dubbo.common.utils.Holder@482cd91f}
@@ -199,35 +199,42 @@ public class ExtensionLoader<T> {
      * This is equivalent to {@code getActivateExtension(url, url.getParameter(key).split(","), null)}
      *
      * @param url   url
-     * @param key   url parameter key which used to get extension point names
+     * @param key   url parameter key which used to get extension point names. 拓展点名称key
      * @param group group
      * @return extension list which are activated.
      * @see #getActivateExtension(com.alibaba.dubbo.common.URL, String[], String)
      */
     public List<T> getActivateExtension(URL url, String key, String group) {
+        // 获取拓展点名称列表，多个以逗号分隔
         String value = url.getParameter(key);
         return getActivateExtension(url, value == null || value.length() == 0 ? null : Constants.COMMA_SPLIT_PATTERN.split(value), group);
     }
 
     /**
      * Get activate extensions.
+     * 获取激活的拓展对象列表（Activate激活参数匹配）
      *
      * @param url    url
-     * @param values extension point names
+     * @param values extension point names. 拓展点名称数组
      * @param group  group
      * @return extension list which are activated
      * @see com.alibaba.dubbo.common.extension.Activate
      */
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<T>();
+        // 拓展点名称列表
         List<String> names = values == null ? new ArrayList<String>(0) : Arrays.asList(values);
+        // 如果拓展点名称names不包括"-default"，什么意思？
         if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
+            // 加载并缓存拓展类Class对象（如需要）
             getExtensionClasses();
+            // 遍历已缓存的激活注解Activate集合
             for (Map.Entry<String, Activate> entry : cachedActivates.entrySet()) {
-                String name = entry.getKey();
-                Activate activate = entry.getValue();
+                String name = entry.getKey(); // 拓展点名称
+                Activate activate = entry.getValue(); // 激活注解对象
+                // 如果group与注解匹配
                 if (isMatchGroup(group, activate.group())) {
-                    T ext = getExtension(name);
+                    T ext = getExtension(name); // 根据名称获取拓展对象
                     if (!names.contains(name)
                             && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)
                             && isActive(activate, url)) {
@@ -259,10 +266,19 @@ public class ExtensionLoader<T> {
         return exts;
     }
 
+    /**
+     * group为null、空字符串，或者groups包含有group，则返回true，否则返回false
+     *
+     * @param group
+     * @param groups
+     * @return
+     */
     private boolean isMatchGroup(String group, String[] groups) {
+        // group为null或空字符串则返回true
         if (group == null || group.length() == 0) {
             return true;
         }
+        // groups包含有group，则返回true，否则返回false
         if (groups != null && groups.length > 0) {
             for (String g : groups) {
                 if (group.equals(g)) {
@@ -273,17 +289,26 @@ public class ExtensionLoader<T> {
         return false;
     }
 
+    /**
+     * 传入的url参数key是否与activate注解所声明的URL参数key匹配，是则返回true表示激活
+     *
+     * @param activate
+     * @param url
+     * @return
+     */
     private boolean isActive(Activate activate, URL url) {
-        String[] keys = activate.value();
+        String[] keys = activate.value(); // 注解声明的URL参数key值数组，匹配时才激活拓展类
+        // 没声明匹配条件则默认激活
         if (keys.length == 0) {
             return true;
         }
+        // 遍历每一个URL注解key值，然后再遍历入参url的参数key是否与之匹配，匹配则返回true表示激活
         for (String key : keys) {
             for (Map.Entry<String, String> entry : url.getParameters().entrySet()) {
                 String k = entry.getKey();
                 String v = entry.getValue();
-                if ((k.equals(key) || k.endsWith("." + key))
-                        && ConfigUtils.isNotEmpty(v)) {
+                if ((k.equals(key) || k.endsWith("." + key)) // key相等、或以".$key"结尾
+                        && ConfigUtils.isNotEmpty(v)) { // 非null、空字符串、"false"、"0"、"null"或"N/A"
                     return true;
                 }
             }

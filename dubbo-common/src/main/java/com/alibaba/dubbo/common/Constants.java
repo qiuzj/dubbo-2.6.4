@@ -350,7 +350,7 @@ public class Constants {
     public static final String ANY_VALUE = "*";
 
     public static final String COMMA_SEPARATOR = ",";
-
+    /** 使用 "," 作为分隔符 */
     public static final Pattern COMMA_SPLIT_PATTERN = Pattern
             .compile("\\s*[,]+\\s*");
 
@@ -362,7 +362,7 @@ public class Constants {
             .compile("\\s*[|;]+\\s*");
 
     public static final String SEMICOLON_SEPARATOR = ";";
-
+    /** 使用 ";" 作为分隔符 */
     public static final Pattern SEMICOLON_SPLIT_PATTERN = Pattern
             .compile("\\s*[;]+\\s*");
 
